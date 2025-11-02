@@ -88,8 +88,10 @@ export function LoginForm() {
             </>
           ) : (
             <>
-              <strong>Email:</strong> user@example.com <br />
-              <strong>Password:</strong> password
+              <strong>Casey Jordan (User):</strong> user@example.com <br />
+              <strong>Taylor Morgan (User):</strong> taylor@example.com <br />
+              <strong>Jamie Bell (User):</strong> jamie@example.com <br />
+              <strong>Password for all:</strong> password
             </>
           )}
         </AlertDescription>

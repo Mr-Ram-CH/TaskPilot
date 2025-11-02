@@ -26,12 +26,14 @@ export const initialUsers: User[] = [
   {
     id: 'user-2',
     name: 'Taylor Morgan',
+    email: 'taylor@example.com',
     role: 'User',
     avatar: avatarUser2,
   },
     {
     id: 'user-3',
     name: 'Jamie Bell',
+    email: 'jamie@example.com',
     role: 'User',
     avatar: avatarUser3,
     },
