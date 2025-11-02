@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { Task, TaskStatus, User } from './definitions';
 import { TaskSchema } from './validation';
 import { tasks as dbTasks, initialUsers } from './data';
-import { auth } from './firebase';
 
 // A simple in-memory store for tasks. This will reset on server restart.
 let tasks: Task[] = [...dbTasks];

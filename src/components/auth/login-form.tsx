@@ -1,11 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { LogIn, Loader2 } from 'lucide-react';
-
+import { ArrowRight, Loader2 } from 'lucide-react';
+import { User } from '@/lib/definitions';
+import { getUsers } from '@/lib/data';
 import { useUser } from '@/hooks/use-user';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,12 +18,17 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 
 const LoginSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email.' }),
-  password: z.string().min(1, { message: 'Password is required.' }),
+  userId: z.string().min(1, { message: 'Please select a user.' }),
 });
 
 type LoginFormValues = z.infer<typeof LoginSchema>;
@@ -30,18 +37,26 @@ export function LoginForm() {
   const { login } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      const users = await getUsers();
+      setAllUsers(users);
+    }
+    fetchUsers();
+  }, []);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      userId: '',
     },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      await login(data.email, data.password);
+      await login(data.userId);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -57,30 +72,24 @@ export function LoginForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="email"
+          name="userId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  placeholder="name@example.com"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
+              <FormLabel>User</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a user" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {allUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} ({user.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -93,7 +102,7 @@ export function LoginForm() {
           {form.formState.isSubmitting ? (
             <Loader2 className="animate-spin" />
           ) : (
-            <LogIn />
+            <ArrowRight />
           )}
           Sign In
         </Button>

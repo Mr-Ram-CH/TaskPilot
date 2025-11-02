@@ -24,14 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { UserRole } from '@/lib/definitions';
 
 const SignupSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Please enter a valid email.' }),
-  password: z
-    .string()
-    .min(6, { message: 'Password must be at least 6 characters.' }),
   role: z.enum(['User', 'Project Manager']),
 });
 
@@ -46,15 +41,18 @@ export function SignupForm() {
     resolver: zodResolver(SignupSchema),
     defaultValues: {
       name: '',
-      email: '',
-      password: '',
       role: 'User',
     },
   });
 
   const onSubmit = async (data: SignupFormValues) => {
     try {
-      await signup(data.email, data.password, data.name, data.role);
+      // In a real app, email and password would be used here.
+      // For this mock setup, we'll generate a dummy email and password.
+      const email = `${data.name.toLowerCase().replace(' ', '')}@example.com`;
+      const password = 'password123';
+
+      await signup(email, password, data.name, data.role);
       toast({
         title: 'Account Created',
         description: 'Welcome to TaskPilot! Redirecting to your dashboard.',
@@ -87,36 +85,6 @@ export function SignupForm() {
         />
         <FormField
           control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  placeholder="name@example.com"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name="role"
           render={({ field }) => (
             <FormItem>
@@ -136,6 +104,9 @@ export function SignupForm() {
             </FormItem>
           )}
         />
+        <p className="text-xs text-muted-foreground">
+            Note: Email and password are not required for this demo.
+        </p>
         <Button
           type="submit"
           className="w-full"

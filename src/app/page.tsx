@@ -9,7 +9,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="flex flex-col items-center justify-center gap-2 text-center">
             <Logo />
-            <CardTitle className="text-2xl">Sign in to TaskPilot</CardTitle>
+            <CardTitle className="text-2xl">Welcome Back!</CardTitle>
             <CardDescription>
                 Enter your credentials to access your account.
             </CardDescription>

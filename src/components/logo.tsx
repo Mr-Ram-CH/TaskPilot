@@ -1,4 +1,4 @@
-import { FileText } from 'lucide-react';
+import { Target } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
@@ -11,7 +11,7 @@ export function Logo({ className }: { className?: string }) {
         className
       )}
     >
-      <FileText className="h-7 w-7" />
+      <Target className="h-7 w-7" />
       <h1 className="text-xl font-bold tracking-tight">TaskPilot</h1>
     </Link>
   );
