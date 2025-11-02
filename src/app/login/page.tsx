@@ -38,7 +38,7 @@ export default function LoginPage() {
             <LoginForm />
           </Suspense>
         </CardContent>
-        <CardFooter className="flex-col items-center justify-center">
+        <CardFooter className="flex-col items-center justify-center gap-2 pt-4">
           <p className="text-sm text-muted-foreground">
             {"Don't have an account? "}
             <Link
@@ -48,6 +48,9 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
+          <Link href="/" className="text-sm text-muted-foreground hover:underline">
+            &larr; Back to role selection
+          </Link>
         </CardFooter>
       </Card>
     </main>
