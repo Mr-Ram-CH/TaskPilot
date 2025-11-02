@@ -7,88 +7,135 @@ import {
   useCallback,
   ReactNode,
 } from 'react';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  type User as FirebaseUser,
+} from 'firebase/auth';
 import type { User, UserRole } from '@/lib/definitions';
-import { findUserById, addUser } from '@/lib/actions';
+import { auth } from '@/lib/firebase';
+import { addUser, findUserByEmail, updateUser } from '@/lib/actions';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface UserContextType {
   user: User | null;
+  firebaseUser: FirebaseUser | null;
   isLoading: boolean;
-  login: (userId: string) => Promise<void>;
+  login: (email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => void;
-  signup: (email: string, password: string, name: string, role: UserRole) => Promise<User>;
+  signup: (email: string, password: string, name: string) => Promise<User>;
 }
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Try to load user from localStorage on initial load
-    try {
-      const storedUser = localStorage.getItem('taskpilot-user');
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser) {
-            setUser(parsedUser);
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setFirebaseUser(fbUser);
+      if (fbUser) {
+        // User is signed in, see if we have them in our 'DB'
+        let appUser = await findUserByEmail(fbUser.email!);
+        if (appUser) {
+          setUser(appUser);
+        } else {
+          // This case can happen if a user was created in Firebase but not in our app's user list.
+           const defaultAvatar = PlaceHolderImages.find(p => p.id === 'default-avatar')?.imageUrl ?? '';
+           const newUser: User = {
+             id: fbUser.uid,
+             name: fbUser.displayName || 'New User',
+             email: fbUser.email!,
+             role: 'User',
+             avatar: defaultAvatar,
+           };
+           await addUser(newUser);
+           setUser(newUser);
         }
+      } else {
+        setUser(null);
       }
-    } catch (error) {
-      console.error('Failed to parse user from localStorage', error);
-      localStorage.removeItem('taskpilot-user');
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
-
-  const login = useCallback(async (userId: string) => {
-    setIsLoading(true);
-    const appUser = await findUserById(userId);
-    if (appUser) {
-      setUser(appUser);
-      try {
-        localStorage.setItem('taskpilot-user', JSON.stringify(appUser));
-      } catch (error) {
-        console.error('Failed to save user to localStorage', error);
-      }
-    } else {
       setIsLoading(false);
-      throw new Error('User not found.');
-    }
-    setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const logout = useCallback(() => {
+  const login = useCallback(
+    async (email: string, password: string, role: UserRole) => {
+      setIsLoading(true);
+      try {
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        const fbUser = userCredential.user;
+        let appUser = await findUserByEmail(fbUser.email!);
+
+        if (!appUser) {
+          throw new Error('User not found in our system, please sign up.');
+        }
+
+        // If user's role in our DB doesn't match what they selected, update it.
+        // In a real app, you might have stricter rules for role changes.
+        if (appUser.role !== role) {
+          appUser.role = role;
+          await updateUser(appUser);
+        }
+
+        setUser(appUser);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const logout = useCallback(async () => {
+    await signOut(auth);
     setUser(null);
-    try {
-      localStorage.removeItem('taskpilot-user');
-    } catch (error) {
-      console.error('Failed to remove user from localStorage', error);
-    }
+    setFirebaseUser(null);
   }, []);
 
   const signup = useCallback(
-    async (email: string, password: string, name: string, role: UserRole) => {
-      const defaultAvatar = PlaceHolderImages.find(p => p.id === 'default-avatar')?.imageUrl ?? '';
-      
+    async (email: string, password: string, name: string) => {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const fbUser = userCredential.user;
+
+      const defaultAvatar =
+        PlaceHolderImages.find((p) => p.id === 'default-avatar')?.imageUrl ??
+        '';
+
       const newUser: User = {
-        id: `user-${Date.now()}`,
+        id: fbUser.uid,
         name,
-        role,
+        email,
+        // New signups are always 'User' role by default for this app
+        role: 'User',
         avatar: defaultAvatar,
       };
-      
+
       await addUser(newUser);
-      await login(newUser.id);
+      setUser(newUser);
       return newUser;
     },
-    [login]
+    []
   );
 
   return (
-    <UserContext.Provider value={{ user, isLoading, login, logout, signup }}>
+    <UserContext.Provider
+      value={{ user, firebaseUser, isLoading, login, logout, signup }}
+    >
       {children}
     </UserContext.Provider>
   );

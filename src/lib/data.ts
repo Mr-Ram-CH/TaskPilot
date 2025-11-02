@@ -12,12 +12,14 @@ export const initialUsers: User[] = [
   {
     id: 'pm-1',
     name: 'Alex Ray',
+    email: 'pm@example.com',
     role: 'Project Manager',
     avatar: avatarPM,
   },
   {
     id: 'user-1',
     name: 'Casey Jordan',
+    email: 'user@example.com',
     role: 'User',
     avatar: avatarUser1,
   },

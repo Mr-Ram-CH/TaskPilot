@@ -3,6 +3,7 @@ export type UserRole = 'Project Manager' | 'User';
 export type User = {
   id: string;
   name: string;
+  email: string;
   role: UserRole;
   avatar: string;
 };

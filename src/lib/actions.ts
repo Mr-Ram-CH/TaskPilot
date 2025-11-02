@@ -6,21 +6,31 @@ import { Task, TaskStatus, User } from './definitions';
 import { TaskSchema } from './validation';
 import { tasks as dbTasks, initialUsers } from './data';
 
-// A simple in-memory store for tasks. This will reset on server restart.
+// A simple in-memory store. This will reset on server restart.
 let tasks: Task[] = [...dbTasks];
 let users: User[] = [...initialUsers];
 
-// This function is for seeding the in-memory user store when a user signs up.
-// In a real app, this would be a database call to create a new user record.
 export async function addUser(user: User): Promise<void> {
-  if (!users.find(u => u.id === user.id)) {
+  if (!users.find(u => u.email === user.email)) {
     users.push(user);
   }
 }
 
-// In a real app, this would get a user from a database.
+export async function updateUser(user: User): Promise<User> {
+  const userIndex = users.findIndex(u => u.id === user.id);
+  if (userIndex === -1) {
+    throw new Error('User not found for update');
+  }
+  users[userIndex] = user;
+  return user;
+}
+
 export async function findUserById(userId: string): Promise<User | undefined> {
   return users.find(u => u.id === userId);
+}
+
+export async function findUserByEmail(email: string): Promise<User | undefined> {
+  return users.find(u => u.email === email);
 }
 
 export async function addTask(data: z.infer<typeof TaskSchema>) {
@@ -80,12 +90,9 @@ export async function updateTaskStatus(id: string, status: TaskStatus) {
 }
 
 export async function getTasksForActions(): Promise<Task[]> {
-  // In a real app, this would fetch from a database.
-  // Here, we return the current state of our in-memory array.
   return tasks;
 }
 
 export async function getUsersForActions(): Promise<User[]> {
-    // In a real app, this would fetch from a database.
     return users;
 }

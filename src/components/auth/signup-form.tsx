@@ -17,18 +17,20 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
-const SignupSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  role: z.enum(['User', 'Project Manager']),
-});
+const SignupSchema = z
+  .object({
+    name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
+    email: z.string().email({ message: 'Please enter a valid email.' }),
+    password: z
+      .string()
+      .min(6, { message: 'Password must be at least 6 characters.' }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
 
 type SignupFormValues = z.infer<typeof SignupSchema>;
 
@@ -41,28 +43,29 @@ export function SignupForm() {
     resolver: zodResolver(SignupSchema),
     defaultValues: {
       name: '',
-      role: 'User',
+      email: '',
+      password: '',
+      confirmPassword: '',
     },
   });
 
   const onSubmit = async (data: SignupFormValues) => {
     try {
-      // In a real app, email and password would be used here.
-      // For this mock setup, we'll generate a dummy email and password.
-      const email = `${data.name.toLowerCase().replace(' ', '')}@example.com`;
-      const password = 'password123';
-
-      await signup(email, password, data.name, data.role);
+      await signup(data.email, data.password, data.name);
       toast({
         title: 'Account Created',
         description: 'Welcome to TaskPilot! Redirecting to your dashboard.',
       });
       router.push('/dashboard');
     } catch (error: any) {
+      let errorMessage = 'An unexpected error occurred.';
+       if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email address is already in use.';
+      }
       toast({
         variant: 'destructive',
         title: 'Sign-up Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description: errorMessage,
       });
     }
   };
@@ -85,28 +88,47 @@ export function SignupForm() {
         />
         <FormField
           control={form.control}
-          name="role"
+          name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="User">User</SelectItem>
-                  <SelectItem value="Project Manager">Project Manager</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="name@example.com"
+                  {...field}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <p className="text-xs text-muted-foreground">
-            Note: Email and password are not required for this demo.
-        </p>
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Button
           type="submit"
           className="w-full"
