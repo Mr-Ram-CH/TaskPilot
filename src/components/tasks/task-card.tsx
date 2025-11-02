@@ -37,8 +37,12 @@ export default function TaskCard({ task }: { task: Task }) {
 
   useEffect(() => {
     async function fetchUsers() {
+      try {
         const users = await getUsers();
         setAllUsers(users);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+      }
     }
     fetchUsers();
   }, []);

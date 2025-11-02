@@ -86,10 +86,12 @@ export function TaskDialog({
   useEffect(() => {
     async function fetchUsers() {
       const allUsers = await getUsers();
-      setUsers(allUsers);
+      setUsers(allUsers.filter(u => u.role === 'User'));
     }
-    fetchUsers();
-  }, []);
+    if (open) {
+        fetchUsers();
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open) {

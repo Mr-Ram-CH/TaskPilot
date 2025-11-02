@@ -16,13 +16,13 @@ export async function addUser(user: User): Promise<void> {
   }
 }
 
-export async function updateUser(user: User): Promise<User> {
-  const userIndex = users.findIndex(u => u.id === user.id);
+export async function updateUser(userId: string, data: Partial<User>): Promise<User> {
+  const userIndex = users.findIndex(u => u.id === userId);
   if (userIndex === -1) {
     throw new Error('User not found for update');
   }
-  users[userIndex] = user;
-  return user;
+  users[userIndex] = { ...users[userIndex], ...data };
+  return users[userIndex];
 }
 
 export async function findUserById(userId: string): Promise<User | undefined> {

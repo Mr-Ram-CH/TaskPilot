@@ -34,15 +34,16 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  // Get the role from the query parameters, defaulting to 'user'
   const roleParam = searchParams.get('role') || 'user';
   const role = roleParam === 'project-manager' ? 'Project Manager' : 'User';
+
+  const defaultEmail = role === 'Project Manager' ? 'pm@example.com' : 'user@example.com';
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: defaultEmail,
+      password: 'password',
     },
   });
 

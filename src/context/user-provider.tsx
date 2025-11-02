@@ -8,7 +8,6 @@ import {
   ReactNode,
 } from 'react';
 import {
-  getAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -40,27 +39,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
+        setIsLoading(true);
         // User is signed in, see if we have them in our 'DB'
         let appUser = await findUserByEmail(fbUser.email!);
         if (appUser) {
           setUser(appUser);
         } else {
-          // This case can happen if a user was created in Firebase but not in our app's user list.
+          // This case can happen if a user was created in Firebase but not in our app's user list (e.g. first sign-up).
            const defaultAvatar = PlaceHolderImages.find(p => p.id === 'default-avatar')?.imageUrl ?? '';
            const newUser: User = {
              id: fbUser.uid,
              name: fbUser.displayName || 'New User',
              email: fbUser.email!,
+             // New users default to 'User' role
              role: 'User',
-             avatar: defaultAvatar,
+             avatar: fbUser.photoURL || defaultAvatar,
            };
            await addUser(newUser);
            setUser(newUser);
         }
+        setIsLoading(false);
       } else {
         setUser(null);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -68,31 +70,35 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string, role: UserRole) => {
-      setIsLoading(true);
-      try {
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        const fbUser = userCredential.user;
-        let appUser = await findUserByEmail(fbUser.email!);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const fbUser = userCredential.user;
+      let appUser = await findUserByEmail(fbUser.email!);
 
-        if (!appUser) {
-          throw new Error('User not found in our system, please sign up.');
-        }
-
-        // If user's role in our DB doesn't match what they selected, update it.
-        // In a real app, you might have stricter rules for role changes.
-        if (appUser.role !== role) {
-          appUser.role = role;
-          await updateUser(appUser);
-        }
-
-        setUser(appUser);
-      } finally {
-        setIsLoading(false);
+      if (!appUser) {
+        // Should not happen if onAuthStateChanged is working correctly, but as a fallback.
+        const defaultAvatar = PlaceHolderImages.find(p => p.id === 'default-avatar')?.imageUrl ?? '';
+        appUser = {
+          id: fbUser.uid,
+          name: fbUser.displayName || email,
+          email: fbUser.email!,
+          role: role, // Assign role selected at login
+          avatar: fbUser.photoURL || defaultAvatar,
+        };
+        await addUser(appUser);
       }
+
+      // If user's role in our DB doesn't match what they selected, update it.
+      // In a real app, you might have stricter rules for role changes.
+      if (appUser.role !== role) {
+        appUser.role = role;
+        await updateUser(appUser.id, { role: role });
+      }
+
+      setUser(appUser);
     },
     []
   );
