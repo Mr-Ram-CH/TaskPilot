@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 function LoginFormSkeleton() {
   return (
@@ -48,9 +50,11 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
-          <Link href="/" className="text-sm text-muted-foreground hover:underline">
-            &larr; Back to role selection
-          </Link>
+          <Button variant="ghost" asChild>
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to role selection
+            </Link>
+          </Button>
         </CardFooter>
       </Card>
     </main>
